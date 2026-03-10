@@ -34,6 +34,12 @@ function optionalEnvStr(key: string, defaultValue: string): string {
   return process.env[key] ?? defaultValue;
 }
 
+function optionalEnvBool(key: string, defaultValue: boolean): boolean {
+  const raw = process.env[key];
+  if (!raw) return defaultValue;
+  return raw.toLowerCase() === 'true' || raw === '1';
+}
+
 export const config = {
   openaiApiKey: requireEnv('OPENAI_API_KEY'),
 
@@ -63,4 +69,17 @@ export const config = {
 
   /** Polite delay in ms between individual page fetches */
   requestDelayMs: optionalEnvInt('REQUEST_DELAY_MS', 500),
+
+  /**
+   * When true, use a headless Chromium browser (via Playwright) to render
+   * pages before extracting text.  Required for JavaScript-rendered SPAs.
+   * When false (default), the faster axios HTTP fetch is used instead.
+   */
+  useBrowser: optionalEnvBool('USE_BROWSER', false),
+
+  /**
+   * How long (ms) to wait after the browser signals network-idle before
+   * grabbing the rendered HTML.  Increase for pages with slow async renders.
+   */
+  browserTimeoutMs: optionalEnvInt('BROWSER_TIMEOUT_MS', 30_000),
 } as const;
