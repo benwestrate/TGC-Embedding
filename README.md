@@ -315,6 +315,60 @@ npm run backup -- --rsync-dest "/Volumes/Personal-Drive/TGC/TGC-Embedding/"
 
 ---
 
+## Cost breakdown
+
+This project has two cost categories:
+
+1. **Embedding cost (OpenAI)** — paid per input token for `text-embedding-3-small`
+2. **Vector DB cost (ChromaDB)** — free if self-hosted locally; infra costs still apply
+
+### 1) Creating vectors (ingestion run)
+
+Your pipeline cost for `npm run embed` is dominated by embedding input tokens:
+
+```text
+ingestion_cost_usd = (total_embedding_input_tokens / 1_000_000) * embedding_price_per_1m
+```
+
+- `text-embedding-3-small` pricing reference: **$0.02 / 1M input tokens** (standard API)
+- Batch API can lower this to **$0.01 / 1M input tokens** if you switch to batch mode
+- Embeddings charge input tokens only (no output-token charge)
+
+Quick sizing rule-of-thumb:
+
+- English content is often around **1 word ≈ 1.3 tokens**
+- With current defaults (`CHUNK_SIZE=500`, `CHUNK_OVERLAP=50`), each chunk is roughly ~650 tokens
+
+Example:
+
+- 1,000,000 embedded tokens at standard pricing -> **$0.02**
+- 50,000,000 embedded tokens at standard pricing -> **$1.00**
+
+### 2) Semantic search query cost (runtime UI/API)
+
+Each `POST /api/search` call embeds the user query once, then queries Chroma.
+
+```text
+query_cost_usd = (query_tokens / 1_000_000) * embedding_price_per_1m
+```
+
+Typical query examples at $0.02 / 1M:
+
+- 20-token query -> **$0.0000004**
+- 100-token query -> **$0.000002**
+- 300-token query -> **$0.000006**
+
+In this repo's default setup (self-hosted Chroma via Docker/local path), vector lookup itself has no per-query vendor fee; costs are your own machine/cloud compute + storage.
+
+### Chroma pricing note
+
+- **Self-hosted/local Chroma**: no direct license/service fee
+- **Chroma Cloud** (optional managed service): usage-based pricing applies if you migrate
+
+> Pricing can change. Always verify current prices before budgeting.
+
+---
+
 ## State files (`./crawl_state/`)
 
 | File            | Purpose                                        |
