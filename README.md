@@ -232,8 +232,36 @@ curl http://localhost:8000/api/v2/heartbeat
 docker compose down
 ```
 
-The compose setup persists Chroma data in a named Docker volume (`chroma_data`).
 The compose setup persists Chroma data directly in this repo at `./chroma_data`.
+
+### Backup job (Chroma + crawl state)
+
+Use the built-in backup job to archive `./chroma_data` and `./crawl_state`:
+
+```bash
+# Run backup with default retention (keep 14 archives)
+npm run backup
+
+# Stop Chroma before backup for a consistent snapshot
+npm run backup -- --stop-chroma
+
+# Keep only the latest 30 backups
+npm run backup -- --keep 30
+```
+
+Backups are saved to `./backups` as `tgc-embedding-YYYYMMDD-HHMMSS.tar.gz`.
+After each backup, the job also runs an rsync update from this repo to:
+`/Volumes/Personal-Drive/TGC/TGC-Embedding/`.
+
+Use these options when needed:
+
+```bash
+# Skip rsync for this run
+npm run backup -- --no-rsync
+
+# Override rsync destination
+npm run backup -- --rsync-dest "/Volumes/Personal-Drive/TGC/TGC-Embedding/"
+```
 
 ---
 

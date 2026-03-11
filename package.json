@@ -6,6 +6,7 @@
   "scripts": {
     "embed": "ts-node src/vectordb/index.ts",
     "embed:dry": "DRY_RUN=true LIMIT=3 ts-node src/vectordb/index.ts",
+    "backup": "bash ./scripts/backup.sh",
     "verify:metadata": "ts-node src/vectordb/verify-metadata.ts",
     "monitor": "ts-node src/monitor/index.ts",
     "embed:fresh": "rm -rf ./crawl_state/processed.txt ./crawl_state/failed.txt ./chroma_db && npm run embed",

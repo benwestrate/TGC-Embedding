@@ -9,6 +9,8 @@ dist/
 
 # ChromaDB data
 chroma_db/
+chroma_data/
+backups/
 
 # Runtime state (generated at runtime)
 crawl_state/processed.txt
