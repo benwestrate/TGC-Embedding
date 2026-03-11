@@ -82,4 +82,21 @@ export const config = {
    * grabbing the rendered HTML.  Increase for pages with slow async renders.
    */
   browserTimeoutMs: optionalEnvInt('BROWSER_TIMEOUT_MS', 30_000),
+
+  /**
+   * Dry-run mode: fetch, extract, and chunk pages normally, but skip the
+   * OpenAI embedding API call and the ChromaDB upsert.  State files
+   * (processed.txt, failed.txt) are also left untouched.
+   * Useful for testing connectivity, sitemap coverage, and extraction quality
+   * without incurring API costs or modifying persistent state.
+   */
+  dryRun: optionalEnvBool('DRY_RUN', false),
+
+  /**
+   * Maximum number of pending URLs to process in a single run.
+   * 0 (default) means no limit — all pending URLs are processed.
+   * Set to a small number (e.g. 5) to sanity-check a slice of the sitemap
+   * before committing to a full run.
+   */
+  limit: optionalEnvInt('LIMIT', 0),
 } as const;

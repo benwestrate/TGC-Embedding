@@ -46,6 +46,9 @@ const stats: Stats = {
  * Process a single URL: fetch → extract → chunk → embed → store.
  * All retry logic lives in fetcher.ts; this function either succeeds or
  * throws (after retries) so the queue handler can record the failure.
+ *
+ * When config.dryRun is true the embed and store steps are skipped so the
+ * pipeline can be validated without incurring API costs or writing to the DB.
  */
 async function processUrl(url: string): Promise<number> {
   // 1. Fetch
@@ -63,6 +66,11 @@ async function processUrl(url: string): Promise<number> {
   if (chunks.length === 0) {
     logger.warn(`No chunks produced for ${url}`);
     return 0;
+  }
+
+  if (config.dryRun) {
+    logger.info(`[dry-run] Would embed and store ${chunks.length} chunks for ${url}`);
+    return chunks.length;
   }
 
   // 4. Embed
@@ -89,11 +97,23 @@ async function main(): Promise<void> {
   // Load sitemap and subtract already-processed URLs
   const allUrls = loadSitemap();
   const processed = loadProcessed();
-  const pending = allUrls.filter((u) => !processed.has(u));
+  let pending = allUrls.filter((u) => !processed.has(u));
+
+  // Apply URL limit (DRY_RUN or quick test slices)
+  if (config.limit > 0) {
+    pending = pending.slice(0, config.limit);
+  }
 
   stats.total = allUrls.length;
   stats.processed = processed.size;
   stats.timestamp = new Date().toISOString();
+
+  if (config.dryRun) {
+    logger.info('DRY-RUN mode — embedding and ChromaDB writes are skipped');
+  }
+  if (config.limit > 0) {
+    logger.info(`LIMIT=${config.limit} — processing at most ${config.limit} pending URLs`);
+  }
 
   logger.info(`Sitemap: ${allUrls.length} URLs total, ${processed.size} already processed`);
   logger.info(`Starting pipeline for ${pending.length} pending URLs`);
@@ -114,14 +134,20 @@ async function main(): Promise<void> {
       logger.info(`Processing: ${url}`);
       try {
         const chunkCount = await processUrl(url);
-        await markProcessed(url);
+        // In dry-run mode skip writing to processed.txt so state is unchanged
+        if (!config.dryRun) {
+          await markProcessed(url);
+        }
         stats.processed += 1;
         stats.chunks += chunkCount;
         logger.info(`Done: ${url} (${chunkCount} chunks)`);
       } catch (err) {
         const reason = err instanceof Error ? err.message : String(err);
         logger.error(`Failed: ${url}`, reason);
-        await markFailed(url, reason);
+        // In dry-run mode skip writing to failed.txt so state is unchanged
+        if (!config.dryRun) {
+          await markFailed(url, reason);
+        }
         stats.failed += 1;
       } finally {
         stats.timestamp = new Date().toISOString();

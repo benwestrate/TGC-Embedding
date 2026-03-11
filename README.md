@@ -88,6 +88,43 @@ npm run monitor
 
 ---
 
+### Test / dry-run flags
+
+Two flags let you validate the pipeline without spending API credits or
+modifying persistent state.
+
+#### `DRY_RUN` — fetch and extract without embedding or storing
+
+```bash
+# One-off dry run (reads your .env, no API calls made)
+DRY_RUN=true npm run embed
+
+# Convenience shortcut — dry run of the first 3 pending URLs
+npm run embed:dry
+```
+
+In dry-run mode the pipeline still fetches every page, extracts clean text,
+and produces chunks — only the OpenAI embedding API call and the ChromaDB
+upsert are skipped.  `processed.txt` and `failed.txt` are **not** updated,
+so re-running in normal mode afterwards will still process every URL.
+
+Useful for:
+- Verifying that your sitemap URLs are reachable
+- Checking that the extractor produces meaningful text
+- Confirming chunk counts before committing to a full run
+
+#### `LIMIT` — process only the first N pending URLs
+
+```bash
+# Process only the first 10 pending URLs (full embed, real API calls)
+LIMIT=10 npm run embed
+
+# Combine with DRY_RUN for a completely free smoke-test
+DRY_RUN=true LIMIT=5 npm run embed
+```
+
+`LIMIT=0` (the default) means no limit — all pending URLs are processed.
+
 ### Embed JavaScript-rendered pages
 
 If your site uses a JavaScript framework (React, Vue, Angular, Next.js with
@@ -176,6 +213,8 @@ docker run --rm \
 | `REQUEST_DELAY_MS`| `500`            | Polite delay between page fetches                |
 | `USE_BROWSER`     | `false`          | Use Playwright headless browser for JS-rendered pages |
 | `BROWSER_TIMEOUT_MS` | `30000`       | Browser network-idle timeout in ms (USE_BROWSER only) |
+| `DRY_RUN`         | `false`          | Skip OpenAI + ChromaDB; fetch/extract/chunk only (no state written) |
+| `LIMIT`           | `0`              | Max pending URLs per run (`0` = unlimited)            |
 
 ---
 
