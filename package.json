@@ -1,0 +1,36 @@
+{
+  "name": "tgc-embedding",
+  "version": "1.0.0",
+  "description": "Vector database pipeline for TGC site — fetch, embed, and store page content in ChromaDB",
+  "main": "dist/vectordb/index.js",
+  "scripts": {
+    "embed": "ts-node src/vectordb/index.ts",
+    "embed:dry": "DRY_RUN=true LIMIT=3 ts-node src/vectordb/index.ts",
+    "backup": "bash ./scripts/backup.sh",
+    "verify:metadata": "ts-node src/vectordb/verify-metadata.ts",
+    "monitor": "ts-node src/monitor/index.ts",
+    "embed:fresh": "rm -rf ./crawl_state/processed.txt ./crawl_state/failed.txt ./chroma_db && npm run embed",
+    "build": "tsc",
+    "lint": "eslint 'src/**/*.ts'"
+  },
+  "dependencies": {
+    "axios": "^1.13.6",
+    "cheerio": "^1.0.0",
+    "chromadb": "^1.9.2",
+    "cli-progress": "^3.12.0",
+    "dotenv": "^16.4.5",
+    "openai": "^4.52.7",
+    "p-queue": "^8.0.1",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.35",
+    "@types/cli-progress": "^3.11.6",
+    "@types/node": "^20.14.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

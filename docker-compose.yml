@@ -1,0 +1,15 @@
+services:
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: tgc-chroma
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./chroma_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s

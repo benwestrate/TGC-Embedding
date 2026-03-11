@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# TypeScript build output
+dist/
+
+# Environment — never commit secrets
+.env
+
+# ChromaDB data
+chroma_db/
+chroma_data/
+backups/
+
+# Runtime state (generated at runtime)
+crawl_state/processed.txt
+crawl_state/failed.txt
+crawl_state/stats.json
+
+# OS artefacts
+.DS_Store
+Thumbs.db
