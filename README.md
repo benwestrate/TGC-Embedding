@@ -125,6 +125,28 @@ DRY_RUN=true LIMIT=5 npm run embed
 
 `LIMIT=0` (the default) means no limit — all pending URLs are processed.
 
+#### `URL_INCLUDE` / `URL_EXCLUDE` — filter URLs before processing
+
+The pipeline can filter sitemap URLs by substring match before it checks
+`processed.txt` and schedules work.
+
+- **Default scope** (`URL_INCLUDE` unset): only content URLs are processed:
+  `/article/`, `/podcasts/`, `/sermon/`, `/essay/`, `/blogs/`
+- **Include rule**: URL must match at least one value in `URL_INCLUDE`
+- **Exclude rule**: URL is skipped if it matches any value in `URL_EXCLUDE`
+- **Order**: include first, then exclude
+
+```bash
+# Default content scope (already in .env.example)
+URL_INCLUDE=/article/,/podcasts/,/sermon/,/essay/,/blogs/
+
+# Optional exclusions
+URL_EXCLUDE=/profile/,/feed
+```
+
+Set `URL_INCLUDE=` (empty) to disable include filtering and allow all sitemap
+URLs (subject to `URL_EXCLUDE`).
+
 ### Embed JavaScript-rendered pages
 
 If your site uses a JavaScript framework (React, Vue, Angular, Next.js with
@@ -195,6 +217,24 @@ docker run --rm \
   tgc-embedding
 ```
 
+### Run Chroma with Docker Compose
+
+This repo includes a `docker-compose.yml` for ChromaDB with persistent storage.
+
+```bash
+# Start Chroma in the background (data stored in ./chroma_data)
+docker compose up -d
+
+# Verify Chroma is healthy
+curl http://localhost:8000/api/v2/heartbeat
+
+# Stop Chroma
+docker compose down
+```
+
+The compose setup persists Chroma data in a named Docker volume (`chroma_data`).
+The compose setup persists Chroma data directly in this repo at `./chroma_data`.
+
 ---
 
 ## Configuration (`.env`)
@@ -203,7 +243,7 @@ docker run --rm \
 |-------------------|------------------|--------------------------------------------------|
 | `OPENAI_API_KEY`  | **required**     | OpenAI API key                                   |
 | `CHROMA_COLLECTION` | `tgc_site`     | ChromaDB collection name                         |
-| `CHROMA_PATH`     | `./chroma_db`    | ChromaDB persistence directory                   |
+| `CHROMA_PATH`     | `http://localhost:8000` | ChromaDB server endpoint URL (recommended)  |
 | `WORK_DIR`        | `./crawl_state`  | Directory for sitemap.txt, processed.txt, etc.   |
 | `CHUNK_SIZE`      | `500`            | Words per chunk                                  |
 | `CHUNK_OVERLAP`   | `50`             | Overlapping words between consecutive chunks     |
@@ -213,6 +253,8 @@ docker run --rm \
 | `REQUEST_DELAY_MS`| `500`            | Polite delay between page fetches                |
 | `USE_BROWSER`     | `false`          | Use Playwright headless browser for JS-rendered pages |
 | `BROWSER_TIMEOUT_MS` | `30000`       | Browser network-idle timeout in ms (USE_BROWSER only) |
+| `URL_INCLUDE`     | `/article/,/podcasts/,/sermon/,/essay/,/blogs/` | Comma-separated include patterns (substring match); unset defaults to content URL types |
+| `URL_EXCLUDE`     | *(empty)*        | Comma-separated exclude patterns (substring match) |
 | `DRY_RUN`         | `false`          | Skip OpenAI + ChromaDB; fetch/extract/chunk only (no state written) |
 | `LIMIT`           | `0`              | Max pending URLs per run (`0` = unlimited)            |
 
