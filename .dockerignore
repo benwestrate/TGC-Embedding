@@ -1,0 +1,15 @@
+# Node
+node_modules/
+
+# TypeScript output (rebuilt inside the image)
+dist/
+
+# Runtime state — mount as a volume instead
+crawl_state/
+chroma_db/
+
+# Dev / local files
+.env
+*.log
+.git/
+.gitignore

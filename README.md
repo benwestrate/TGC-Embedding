@@ -38,10 +38,14 @@ skipped on restart.
 
 ## Prerequisites
 
+> **This is a server-side CLI pipeline.** It runs entirely in Node.js and does
+> **not** require a desktop, browser window, or display server.  You can run it
+> on any Linux/macOS/Windows server, a CI runner, or inside a Docker container.
+
 - Node.js ≥ 20
 - An OpenAI API key with access to `text-embedding-3-small`
 - A running ChromaDB instance **or** the default file-based persistence (no extra service needed when using `chromadb` in local/embedded mode)
-- *(Optional, for JS-rendered pages)* Playwright Chromium binary — install with `npx playwright install chromium`
+- *(Optional, for JS-rendered pages)* Playwright Chromium binary — see [JS-rendered pages](#embed-javascript-rendered-pages) below
 
 ---
 
@@ -108,6 +112,51 @@ unchanged.
 > workloads, run the pipeline twice — once with `USE_BROWSER=false` (fast pass)
 > and once with `USE_BROWSER=true` (slow pass for any pages that yielded
 > insufficient content).
+
+> **Server note:** When `USE_BROWSER=true` the headless Chromium instance runs
+> entirely in the background with no display required (`--headless`,
+> `--no-sandbox`, `--disable-gpu`).  On a bare Linux server (Ubuntu/Debian) you
+> may need to install Chromium's OS-level dependencies once:
+> ```bash
+> npx playwright install-deps chromium
+> ```
+> When using Docker (see below) these libraries are already present in the base
+> image and no extra setup is needed.
+
+---
+
+### Running in Docker
+
+A `Dockerfile` is included in the repo.  The image is based on
+`mcr.microsoft.com/playwright` which ships with all Chromium system libraries
+pre-installed, making it the easiest way to run the pipeline — with or without
+`USE_BROWSER` — on any server or cloud environment.
+
+```bash
+# 1. Build the image
+docker build -t tgc-embedding .
+
+# 2. Create a local data directory with your sitemap
+mkdir -p data/crawl_state
+echo https://example.com/page1 > data/crawl_state/sitemap.txt
+
+# 3. Run the pipeline (persistent state lives in ./data via the volume mount)
+docker run --rm \
+  --env-file .env \
+  -v $(pwd)/data:/data \
+  tgc-embedding
+```
+
+To enable JS-rendered page support inside the container just add
+`-e USE_BROWSER=true` — no extra steps needed:
+
+```bash
+docker run --rm \
+  --env-file .env \
+  -e USE_BROWSER=true \
+  -v $(pwd)/data:/data \
+  tgc-embedding
+```
 
 ---
 

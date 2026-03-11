@@ -56,6 +56,7 @@ async function getBrowserContext(): Promise<BrowserContext> {
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage', // prevents OOM crashes in low-memory containers
+      '--disable-gpu',           // required on servers without GPU / hardware acceleration
     ],
   });
 
