@@ -40,11 +40,13 @@ export function loadSitemap(): string[] {
   if (!fs.existsSync(SITEMAP_FILE)) {
     throw new Error(`Sitemap file not found: ${SITEMAP_FILE}`);
   }
-  return fs
+  const lines = fs
     .readFileSync(SITEMAP_FILE, 'utf-8')
     .split('\n')
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
+  // Keep first-seen order while removing duplicate URLs.
+  return [...new Set(lines)];
 }
 
 /** Return the set of URLs that have already been successfully embedded. */

@@ -18,6 +18,10 @@ export interface ChunkRecord {
   chunk: TextChunk;
   url: string;
   title: string;
+  subtitle?: string;
+  capturedAt: string;
+  publishedAt?: string;
+  author?: string;
   embedding: number[];
 }
 
@@ -61,6 +65,10 @@ export async function upsertChunks(records: ChunkRecord[]): Promise<void> {
     url: r.url,
     chunk_index: r.chunk.index,
     title: r.title,
+    ...(r.subtitle ? { subtitle: r.subtitle } : {}),
+    captured_at: r.capturedAt,
+    ...(r.publishedAt ? { published_at: r.publishedAt } : {}),
+    ...(r.author ? { author: r.author } : {}),
   }));
 
   await col.upsert({ ids, embeddings, documents, metadatas });

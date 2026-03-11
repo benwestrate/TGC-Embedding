@@ -40,6 +40,19 @@ const stats: Stats = {
   timestamp: new Date().toISOString(),
 };
 
+function passesUrlFilter(url: string): boolean {
+  const include = config.urlInclude;
+  const exclude = config.urlExclude;
+
+  if (include.length > 0 && !include.some((pattern) => url.includes(pattern))) {
+    return false;
+  }
+  if (exclude.length > 0 && exclude.some((pattern) => url.includes(pattern))) {
+    return false;
+  }
+  return true;
+}
+
 // ── Core job ─────────────────────────────────────────────────────────────────
 
 /**
@@ -55,7 +68,7 @@ async function processUrl(url: string): Promise<number> {
   const html = await fetchPage(url);
 
   // 2. Extract clean text
-  const { title, text } = extractContent(html, url);
+  const { title, subtitle, text, publishedAt, author } = extractContent(html, url);
   if (!text) {
     logger.warn(`Empty content extracted from ${url}`);
     return 0;
@@ -76,12 +89,17 @@ async function processUrl(url: string): Promise<number> {
   // 4. Embed
   const texts = chunks.map((c) => c.text);
   const embeddings = await generateEmbeddings(texts);
+  const capturedAt = new Date().toISOString();
 
   // 5. Build records and upsert
   const records: ChunkRecord[] = chunks.map((chunk, i) => ({
     chunk,
     url,
     title,
+    subtitle,
+    capturedAt,
+    publishedAt,
+    author,
     embedding: embeddings[i]!,
   }));
   await upsertChunks(records);
@@ -94,17 +112,18 @@ async function processUrl(url: string): Promise<number> {
 async function main(): Promise<void> {
   ensureWorkDir();
 
-  // Load sitemap and subtract already-processed URLs
+  // Load sitemap, apply URL filter, and subtract already-processed URLs
   const allUrls = loadSitemap();
+  const filteredUrls = allUrls.filter((u) => passesUrlFilter(u));
   const processed = loadProcessed();
-  let pending = allUrls.filter((u) => !processed.has(u));
+  let pending = filteredUrls.filter((u) => !processed.has(u));
 
   // Apply URL limit (DRY_RUN or quick test slices)
   if (config.limit > 0) {
     pending = pending.slice(0, config.limit);
   }
 
-  stats.total = allUrls.length;
+  stats.total = filteredUrls.length;
   stats.processed = processed.size;
   stats.timestamp = new Date().toISOString();
 
@@ -114,8 +133,14 @@ async function main(): Promise<void> {
   if (config.limit > 0) {
     logger.info(`LIMIT=${config.limit} — processing at most ${config.limit} pending URLs`);
   }
+  if (config.urlInclude.length > 0 || config.urlExclude.length > 0) {
+    logger.info(
+      `URL filter enabled — include=[${config.urlInclude.join(', ')}], exclude=[${config.urlExclude.join(', ')}]`,
+    );
+    logger.info(`Sitemap filtered: ${allUrls.length} -> ${filteredUrls.length} URLs`);
+  }
 
-  logger.info(`Sitemap: ${allUrls.length} URLs total, ${processed.size} already processed`);
+  logger.info(`Sitemap: ${filteredUrls.length} URLs in scope, ${processed.size} already processed`);
   logger.info(`Starting pipeline for ${pending.length} pending URLs`);
 
   if (pending.length === 0) {

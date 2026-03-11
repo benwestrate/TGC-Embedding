@@ -34,10 +34,26 @@ function optionalEnvStr(key: string, defaultValue: string): string {
   return process.env[key] ?? defaultValue;
 }
 
+function optionalEnvPathOrUrl(key: string, defaultValue: string): string {
+  const raw = process.env[key] ?? defaultValue;
+  // Keep HTTP(S) endpoints intact (e.g. http://localhost:8000).
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return path.resolve(raw);
+}
+
 function optionalEnvBool(key: string, defaultValue: boolean): boolean {
   const raw = process.env[key];
   if (!raw) return defaultValue;
   return raw.toLowerCase() === 'true' || raw === '1';
+}
+
+function optionalEnvCsv(key: string, defaultWhenUnset: string[]): string[] {
+  const raw = process.env[key];
+  if (raw === undefined) return defaultWhenUnset;
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
 }
 
 export const config = {
@@ -47,7 +63,7 @@ export const config = {
   chromaCollection: optionalEnvStr('CHROMA_COLLECTION', 'tgc_site'),
 
   /** Path to the ChromaDB persistence directory */
-  chromaPath: path.resolve(optionalEnvStr('CHROMA_PATH', './chroma_db')),
+  chromaPath: optionalEnvPathOrUrl('CHROMA_PATH', './chroma_db'),
 
   /** Working directory that holds sitemap.txt, processed.txt, etc. */
   workDir: path.resolve(optionalEnvStr('WORK_DIR', './crawl_state')),
@@ -99,4 +115,23 @@ export const config = {
    * before committing to a full run.
    */
   limit: optionalEnvInt('LIMIT', 0),
+
+  /**
+   * URL include filter (substring match). A URL must match at least one value
+   * here to be processed. If URL_INCLUDE is explicitly set to an empty string,
+   * include filtering is disabled.
+   */
+  urlInclude: optionalEnvCsv('URL_INCLUDE', [
+    '/article/',
+    '/podcasts/',
+    '/sermon/',
+    '/essay/',
+    '/blogs/',
+  ]),
+
+  /**
+   * URL exclude filter (substring match). Any URL matching one of these values
+   * is skipped.
+   */
+  urlExclude: optionalEnvCsv('URL_EXCLUDE', []),
 } as const;
