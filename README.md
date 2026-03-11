@@ -86,6 +86,33 @@ npm run embed:fresh
 npm run monitor
 ```
 
+### Run the semantic search UI (TanStack Start)
+
+The repo now includes a UI app at `apps/search-ui` with a built-in
+`POST /api/search` route for semantic search against your existing Chroma
+collection.
+
+```bash
+# from repo root
+npm run dev
+```
+
+Then open:
+
+- `http://localhost:3000` for the search UI
+- `http://localhost:3000/api/search` for the API route (POST only)
+
+The UI server expects these environment variables:
+
+- `OPENAI_API_KEY` (required)
+- `CHROMA_PATH` (default `http://localhost:8000`)
+- `CHROMA_COLLECTION` (default `tgc_site`)
+- `SEARCH_TOP_K` (default `8`)
+- `SEARCH_MAX_TOP_K` (default `20`)
+
+When running from this repo root, the UI loads `.env` from the project root
+and also supports an app-local `apps/search-ui/.env`.
+
 ---
 
 ### Test / dry-run flags

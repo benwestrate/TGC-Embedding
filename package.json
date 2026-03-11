@@ -4,6 +4,9 @@
   "description": "Vector database pipeline for TGC site — fetch, embed, and store page content in ChromaDB",
   "main": "dist/vectordb/index.js",
   "scripts": {
+    "dev": "npm --prefix apps/search-ui run dev",
+    "start": "npm --prefix apps/search-ui run preview",
+    "build:ui": "npm --prefix apps/search-ui run build",
     "embed": "ts-node src/vectordb/index.ts",
     "embed:dry": "DRY_RUN=true LIMIT=3 ts-node src/vectordb/index.ts",
     "backup": "bash ./scripts/backup.sh",
