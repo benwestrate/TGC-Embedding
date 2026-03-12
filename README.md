@@ -406,3 +406,26 @@ src/
 ```bash
 npm run build   # compiles TypeScript to dist/
 ```
+
+---
+
+## Proxmox VM deployment (behind existing reverse proxy LXC)
+
+This repo includes a production deployment bundle for a Proxmox-hosted Ubuntu VM
+with Docker Compose, intended to sit behind a separate reverse-proxy LXC.
+
+- Compose stack: `deploy/proxmox/docker-compose.proxmox.yml`
+- VM bootstrap: `scripts/proxmox/provision-vm.sh`
+- Deploy/update: `scripts/proxmox/deploy.sh`
+- Embed job run: `scripts/proxmox/run-embed.sh`
+- Rollback: `scripts/proxmox/rollback.sh`
+- Backup/restore: `scripts/proxmox/backup-local.sh`, `scripts/proxmox/restore-backup.sh`
+- Full runbook: `deploy/proxmox/README.md`
+
+Quick start:
+
+```bash
+# On VM, from repo root
+cp deploy/proxmox/.env.production.example deploy/proxmox/.env.production
+bash ./scripts/proxmox/deploy.sh
+```

@@ -1,0 +1,9 @@
+[Unit]
+Description=TGC Embedding local backup job
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/tgc-embedding
+Environment=KEEP_BACKUPS=30
+ExecStart=/bin/bash /opt/tgc-embedding/scripts/proxmox/backup-local.sh

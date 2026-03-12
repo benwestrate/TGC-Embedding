@@ -1,0 +1,64 @@
+name: tgc-embedding
+
+services:
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: tgc-chroma
+    restart: unless-stopped
+    expose:
+      - "8000"
+    volumes:
+      - ../../chroma_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  search-ui:
+    build:
+      context: ../..
+      dockerfile: apps/search-ui/Dockerfile
+    container_name: tgc-search-ui
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      # Ensure in-cluster Chroma routing by default.
+      CHROMA_PATH: ${CHROMA_PATH:-http://chroma:8000}
+    depends_on:
+      chroma:
+        condition: service_healthy
+    ports:
+      - "${SEARCH_UI_BIND_ADDRESS:-0.0.0.0}:${SEARCH_UI_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+
+  embed:
+    profiles: ["embed"]
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    container_name: tgc-embed-job
+    env_file:
+      - .env.production
+    environment:
+      CHROMA_PATH: ${CHROMA_PATH:-http://chroma:8000}
+      WORK_DIR: /data/crawl_state
+    depends_on:
+      chroma:
+        condition: service_healthy
+    volumes:
+      - ../../crawl_state:/data/crawl_state
+    restart: "no"
